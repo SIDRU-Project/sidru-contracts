@@ -1,0 +1,25 @@
+# Dependencias
+node_modules/
+
+# Secretos (NUNCA commitear el .env real)
+.env
+.env.local
+.env.*.local
+
+# Artefactos de compilacion de Hardhat
+cache/
+artifacts/
+typechain-types/
+
+# Coverage / gas reports
+coverage/
+coverage.json
+gas-report.txt
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
