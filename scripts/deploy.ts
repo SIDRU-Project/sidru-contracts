@@ -12,28 +12,26 @@ import { ethers, network } from "hardhat";
 import * as fs from "fs";
 import * as path from "path";
 
-// Parametros esperados de la red de destino (Polygon Amoy).
+// Red de destino esperada (Polygon Amoy).
 const EXPECTED_NETWORK = "amoy";
 const EXPECTED_CHAIN_ID = 80002n;
 
 async function main(): Promise<void> {
-  // 1. Obtener el deployer. En el MVP, deployer == backend (misma wallet del .env).
+  // En el MVP el deployer es tambien el backend (misma wallet del .env).
   const [deployer] = await ethers.getSigners();
   const backendAddress = deployer.address;
 
-  // 2. Leer el chainId real desde el provider (no confiar solo en network.name).
+  // chainId real del provider; no nos fiamos solo de network.name.
   const realNetwork = await ethers.provider.getNetwork();
   const realChainId = realNetwork.chainId;
 
-  // 3. Log de pre-despliegue (antes de gastar gas).
   console.log("=== Despliegue ChapaTuCripto (CTC) ===");
   console.log(`Red (hardhat)   : ${network.name}`);
   console.log(`ChainId (real)  : ${realChainId}`);
   console.log(`Deployer        : ${deployer.address}`);
   console.log(`Backend (arg)   : ${backendAddress}`);
 
-  // 4. Guard de seguridad: abortar si no estamos en amoy / 80002.
-  //    Evita desplegar en otra red por accidente.
+  // Aborta si no estamos en amoy/80002 para no desplegar en otra red por error.
   if (network.name !== EXPECTED_NETWORK) {
     throw new Error(
       `Red incorrecta: se esperaba "${EXPECTED_NETWORK}" pero hardhat reporta "${network.name}". ` +
@@ -47,24 +45,23 @@ async function main(): Promise<void> {
     );
   }
 
-  // 5. Desplegar el contrato con el constructor arg = direccion del deployer (backend).
+  // Constructor arg = direccion del backend (= deployer en el MVP).
   console.log("\nDesplegando contrato...");
   const Factory = await ethers.getContractFactory("ChapaTuCripto");
   const token = await Factory.deploy(backendAddress);
   await token.waitForDeployment();
 
-  // 6. Recuperar direccion desplegada y txHash del deploy.
   const address = await token.getAddress();
   const txHash = token.deploymentTransaction()?.hash ?? "";
 
   console.log(`\nContrato desplegado en: ${address}`);
   console.log(`Tx de despliegue      : ${txHash}`);
 
-  // 7. Exportar artefactos a deployments/amoy/.
+  // Exportar ABI y direccion a deployments/amoy/.
   const deploymentsDir = path.join(__dirname, "..", "deployments", "amoy");
   fs.mkdirSync(deploymentsDir, { recursive: true });
 
-  // 7a. ABI: leido del artifact compilado por Hardhat.
+  // ABI desde el artifact compilado.
   const artifactPath = path.join(
     __dirname,
     "..",
@@ -81,7 +78,7 @@ async function main(): Promise<void> {
     "utf8"
   );
 
-  // 7b. address.json: metadatos de despliegue (solo direcciones publicas).
+  // address.json: solo direcciones publicas, nunca la clave.
   const addressOut = {
     address,
     backend: backendAddress,
@@ -101,7 +98,7 @@ async function main(): Promise<void> {
   console.log("  - ChapaTuCripto.json (ABI)");
   console.log("  - address.json");
 
-  // 8. Comando de verificacion listo para copiar/pegar (verify se corre aparte).
+  // verify se corre aparte; dejamos el comando listo para copiar.
   console.log("\n=== Verificacion (paso manual) ===");
   console.log(`npx hardhat verify --network amoy ${address} ${backendAddress}`);
   console.log(`\nExplorer: https://amoy.polygonscan.com/address/${address}`);
