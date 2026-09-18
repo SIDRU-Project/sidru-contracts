@@ -242,7 +242,7 @@ contract ChapaTuCriptoStable is ERC20, AccessControl {
     /// @dev Idempotent per withdrawalId. Reverts if the reserve cannot back the new supply.
     ///      Off-chain the backend has already debited the points; this is the on-chain leg.
     /// @param to           Citizen's external wallet (EIP-55 validated off-chain; non-zero here)
-    /// @param withdrawalId Backend withdrawal request id (unique)
+    /// @param withdrawalId Backend-generated random id, unique per withdrawal (never a DB sequence)
     /// @param amount       CTC in wei (points × 1e18)
     function mintWithdrawal(address to, uint256 withdrawalId, uint256 amount)
         external
@@ -264,6 +264,7 @@ contract ChapaTuCriptoStable is ERC20, AccessControl {
     /// @dev Idempotent per withdrawalId. Never dips into the reserve that backs circulating
     ///      CTC: only the surplus above requiredReserve() can be paid out. totalSupply is
     ///      unchanged, so collateralization of existing holders is unaffected.
+    /// @param withdrawalId Backend-generated random id, unique per withdrawal (never a DB sequence)
     /// @param ctcAmount CTC-equivalent in wei (points × 1e18); converted at current parity
     /// @return reserveOut Reserve units transferred (6 decimals for USDC), floor-rounded
     function payoutReserve(address to, uint256 withdrawalId, uint256 ctcAmount)
