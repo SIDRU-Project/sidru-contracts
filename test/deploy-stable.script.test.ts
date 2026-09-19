@@ -15,12 +15,13 @@
 // decimales sirve para probar el aborto por decimales inválidos.
 
 import { expect } from "chai";
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import {
   deployStable,
   DeployAbortError,
   DeployStableSuccess,
+  NATIVE_USDC_POLYGON,
 } from "../scripts/deploy-stable";
 
 describe("scripts/deploy-stable.ts — deployStable(params)", () => {
@@ -31,11 +32,35 @@ describe("scripts/deploy-stable.ts — deployStable(params)", () => {
     [deployer, backend] = await ethers.getSigners();
   });
 
-  async function deployUsdcMock(decimals: number) {
+  async function deployUsdcMock(decimals: number, name = "Mock Configurable Reserve") {
     const Mock = await ethers.getContractFactory("MockConfigurableReserve");
-    const mock = await Mock.deploy("USDC", decimals);
+    const mock = await Mock.deploy(name, "USDC", decimals);
     await mock.waitForDeployment();
     return await mock.getAddress();
+  }
+
+  /**
+   * "Clona" un MockConfigurableReserve recien desplegado en `targetAddress`, para poder
+   * simular que la reserva vive exactamente en NATIVE_USDC_POLYGON (una direccion fija de
+   * mainnet que no podemos elegir via CREATE normal). Copia el bytecode desplegado
+   * (los immutable, como `decimals`, ya quedan embebidos ahi) y las primeras slots de
+   * storage de ERC20 (_balances, _allowances, _totalSupply, _name, _symbol), que es donde
+   * vive todo el estado de un mock recien desplegado sin balances ni allowances.
+   */
+  async function cloneReserveAt(targetAddress: string, name: string, decimals: number) {
+    const sourceAddress = await deployUsdcMock(decimals, name);
+
+    const code = await ethers.provider.getCode(sourceAddress);
+    await network.provider.send("hardhat_setCode", [targetAddress, code]);
+
+    for (let slot = 0; slot < 6; slot++) {
+      const value = await ethers.provider.getStorage(sourceAddress, slot);
+      await network.provider.send("hardhat_setStorageAt", [
+        targetAddress,
+        "0x" + slot.toString(16),
+        value,
+      ]);
+    }
   }
 
   it("camino feliz en hardhat con MockStableReserve: address, roles correctos, totalSupply 0, paridad correcta", async () => {
@@ -83,13 +108,13 @@ describe("scripts/deploy-stable.ts — deployStable(params)", () => {
   });
 
   it("aborta en polygon sin CONFIRM_MAINNET=yes sin desplegar nada", async () => {
-    const goodReserve = await deployUsdcMock(6);
+    await cloneReserveAt(NATIVE_USDC_POLYGON, "USD Coin", 6);
 
     const result = await deployStable({
       networkName: "polygon",
       expectedChainId: 137n,
       skipChainIdCheckForTests: true,
-      reserveTokenAddress: goodReserve,
+      reserveTokenAddress: NATIVE_USDC_POLYGON,
       backendAddress: backend.address,
       centsPerReserveUnit: 360n,
       // confirmMainnet ausente => el default es "no confirmado".
@@ -106,7 +131,7 @@ describe("scripts/deploy-stable.ts — deployStable(params)", () => {
   });
 
   it("aborta en polygon si backend == deployer", async () => {
-    const goodReserve = await deployUsdcMock(6);
+    await cloneReserveAt(NATIVE_USDC_POLYGON, "USD Coin", 6);
 
     let error: unknown;
     try {
@@ -114,7 +139,7 @@ describe("scripts/deploy-stable.ts — deployStable(params)", () => {
         networkName: "polygon",
         expectedChainId: 137n,
         skipChainIdCheckForTests: true,
-        reserveTokenAddress: goodReserve,
+        reserveTokenAddress: NATIVE_USDC_POLYGON,
         backendAddress: deployer.address, // igual al deployer: invalido en polygon
         centsPerReserveUnit: 360n,
         confirmMainnet: true,
@@ -125,5 +150,73 @@ describe("scripts/deploy-stable.ts — deployStable(params)", () => {
 
     expect(error).to.be.instanceOf(DeployAbortError);
     expect((error as Error).message).to.match(/distintas/);
+  });
+
+  // ------------------------------------------------------------ USDC nativo vs. USDC.e
+
+  it("aborta en polygon con la direccion de USDC.e (puenteado): el mensaje lo menciona", async () => {
+    const USDC_E_ADDRESS = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174";
+    await cloneReserveAt(USDC_E_ADDRESS, "USD Coin (PoS)", 6);
+
+    let error: unknown;
+    try {
+      await deployStable({
+        networkName: "polygon",
+        expectedChainId: 137n,
+        skipChainIdCheckForTests: true,
+        reserveTokenAddress: USDC_E_ADDRESS,
+        backendAddress: backend.address,
+        centsPerReserveUnit: 360n,
+        confirmMainnet: true,
+      });
+    } catch (e) {
+      error = e;
+    }
+
+    expect(error).to.be.instanceOf(DeployAbortError);
+    expect((error as Error).message).to.match(/USDC\.e/);
+  });
+
+  it("aborta en polygon con la direccion correcta pero name() distinto", async () => {
+    await cloneReserveAt(NATIVE_USDC_POLYGON, "Not Actually USD Coin", 6);
+
+    let error: unknown;
+    try {
+      await deployStable({
+        networkName: "polygon",
+        expectedChainId: 137n,
+        skipChainIdCheckForTests: true,
+        reserveTokenAddress: NATIVE_USDC_POLYGON,
+        backendAddress: backend.address,
+        centsPerReserveUnit: 360n,
+        confirmMainnet: true,
+      });
+    } catch (e) {
+      error = e;
+    }
+
+    expect(error).to.be.instanceOf(DeployAbortError);
+  });
+
+  it("pasa la validacion del USDC nativo con la direccion y el name() correctos", async () => {
+    await cloneReserveAt(NATIVE_USDC_POLYGON, "USD Coin", 6);
+
+    const result = await deployStable({
+      networkName: "polygon",
+      expectedChainId: 137n,
+      skipChainIdCheckForTests: true,
+      reserveTokenAddress: NATIVE_USDC_POLYGON,
+      backendAddress: backend.address,
+      centsPerReserveUnit: 360n,
+      // confirmMainnet ausente: alcanza con que no aborte por la reserva; el ensayo en
+      // seco de las demas validaciones ya lo cubre el test de CONFIRM_MAINNET.
+    });
+
+    expect(result.deployed).to.equal(false);
+    if (!result.deployed) {
+      expect(result.reserveToken.toLowerCase()).to.equal(NATIVE_USDC_POLYGON.toLowerCase());
+      expect(result.reserveSymbol).to.equal("USDC");
+      expect(result.reserveDecimals).to.equal(6);
+    }
   });
 });

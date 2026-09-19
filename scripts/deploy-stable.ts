@@ -18,8 +18,11 @@
 //
 // Orden de validación (falla rápido, ninguna se salta por CONFIRM_MAINNET):
 //   (a) red admitida -> (b) chainId real == esperado -> (c) token de reserva (resuelve,
-//   lee symbol/decimals, en polygon exige "USDC"/6) -> (d) backend (en polygon obligatorio
-//   y distinto del deployer) -> (e) paridad (entero > 0) -> (f) SOLO en polygon, si
+//   lee symbol/decimals, en polygon exige "USDC"/6, y ademas exige que sea el USDC nativo
+//   de Circle -- name() "USD Coin" y la direccion oficial de Polygon PoS -- para que no
+//   pase como valido el USDC.e puenteado ni otro token no oficial, que comparten symbol y
+//   decimals) -> (d) backend (en polygon obligatorio y distinto del deployer) ->
+//   (e) paridad (entero > 0) -> (f) SOLO en polygon, si
 //   CONFIRM_MAINNET !== "yes": imprime el resumen ya validado y NO despliega -> (g) despliega
 //   y verifica roles/estado -> (h) exporta ABI + address.json (solo datos públicos) ->
 //   (i) imprime el comando de verificación y el explorador.
@@ -37,7 +40,16 @@ export type AllowedNetwork = (typeof ALLOWED_NETWORKS)[number];
 const ERC20_METADATA_ABI = [
   "function symbol() view returns (string)",
   "function decimals() view returns (uint8)",
+  "function name() view returns (string)",
 ];
+
+// Native USDC (Circle) on Polygon PoS mainnet -- the only reserve token accepted on
+// `polygon`. Source: https://developers.circle.com/stablecoins/usdc-contract-addresses
+// (Mainnet table, Polygon PoS row). Distinct from bridged USDC.e
+// (0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174, name() = "USD Coin (PoS)"), which shares
+// the same symbol() ("USDC") and decimals() (6), so those two checks alone cannot tell
+// the two apart.
+export const NATIVE_USDC_POLYGON = "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359";
 
 /** Aborto esperado por una validación de configuración (red, chainId, reserva, backend, paridad). */
 export class DeployAbortError extends Error {}
@@ -155,6 +167,19 @@ async function resolveReserve(
       `Token de reserva invalido para polygon: se esperaba symbol "USDC" y 6 decimales, ` +
         `se encontro symbol "${reserveSymbol}" y ${reserveDecimals} decimales (${address}).`
     );
+  }
+
+  if (networkName === "polygon") {
+    const reserveName: string = await reserve.name();
+    const addressMatches = address.toLowerCase() === NATIVE_USDC_POLYGON.toLowerCase();
+    const nameMatches = reserveName === "USD Coin";
+    if (!addressMatches || !nameMatches) {
+      throw new DeployAbortError(
+        `Token de reserva invalido para polygon: parece USDC.e (puenteado) u otro token no ` +
+          `oficial, no el USDC nativo de Circle. Se esperaba la direccion ${NATIVE_USDC_POLYGON} ` +
+          `con name() "USD Coin"; se encontro ${address} con name() "${reserveName}".`
+      );
+    }
   }
 
   return { reserveTokenAddress: address, reserveSymbol, reserveDecimals, deployedMockReserve };
