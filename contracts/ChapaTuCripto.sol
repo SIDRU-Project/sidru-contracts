@@ -25,8 +25,6 @@ contract ChapaTuCripto is ERC20, AccessControl {
     /// @param sessionId Off-chain session id (unique).
     /// @param user      Citizen custodial address that received the reward.
     /// @param qrHash    keccak256 of the session QR token (traceability).
-    /// @param amount    CTC amount in wei minted for the session.
-    /// @param timestamp Block timestamp at which the session was recorded.
     event SessionRecorded(
         uint256 indexed sessionId,
         address indexed user,
@@ -37,19 +35,16 @@ contract ChapaTuCripto is ERC20, AccessControl {
 
     /// @notice Emitted when CTC are minted to a citizen (backend listens for FCM).
     /// @param user      Citizen custodial address that received the tokens.
-    /// @param amount    CTC amount in wei that was minted.
     /// @param sessionId Off-chain session id linked to the mint.
     event TokensMinted(address indexed user, uint256 amount, uint256 indexed sessionId);
 
     /// @notice Emitted when custodial CTC are withdrawn to a citizen's own wallet.
     /// @param from   Citizen custodial address the tokens were moved from.
     /// @param to     Citizen external wallet the tokens were moved to.
-    /// @param amount CTC amount in wei that was transferred.
     event TokensWithdrawn(address indexed from, address indexed to, uint256 amount);
 
     /// @notice Emitted when CTC are burned as part of a reward redemption.
     /// @param from       Citizen custodial address the tokens were burned from.
-    /// @param amount     CTC amount in wei that was burned.
     /// @param rewardTxId Off-chain reward transaction id (traceability).
     event TokensRedeemed(address indexed from, uint256 amount, uint256 indexed rewardTxId);
 

@@ -1,0 +1,98 @@
+[
+  {
+    "contrato": "ChapaTuCriptoStable",
+    "operacion": "deploy",
+    "gas": 1747740,
+    "nota": "una sola vez"
+  },
+  {
+    "contrato": "USDC (ERC-20)",
+    "operacion": "approve",
+    "gas": 46335,
+    "nota": "previo a fundReserve, una vez por recarga"
+  },
+  {
+    "contrato": "ChapaTuCriptoStable",
+    "operacion": "fundReserve",
+    "gas": 51908,
+    "nota": "una vez por recarga de reserva"
+  },
+  {
+    "contrato": "ChapaTuCriptoStable",
+    "operacion": "recordAndReward (1er mint al usuario)",
+    "gas": 106352,
+    "nota": "incluye crear el slot de balance: mas caro"
+  },
+  {
+    "contrato": "ChapaTuCriptoStable",
+    "operacion": "recordAndReward (mints siguientes)",
+    "gas": 72152,
+    "nota": "costo en regimen"
+  },
+  {
+    "contrato": "ChapaTuCriptoStable",
+    "operacion": "withdrawTo (CTC a MetaMask)",
+    "gas": 56368,
+    "nota": "el backend paga el gas"
+  },
+  {
+    "contrato": "ChapaTuCriptoStable",
+    "operacion": "transfer (entre wallets)",
+    "gas": 34484,
+    "nota": "la paga quien envia"
+  },
+  {
+    "contrato": "ChapaTuCriptoStable",
+    "operacion": "redeem (CTC -> USDC)",
+    "gas": 66056,
+    "nota": "la paga quien canjea"
+  },
+  {
+    "contrato": "ChapaTuCriptoStable",
+    "operacion": "purchase (USDC -> CTC)",
+    "gas": 71776,
+    "nota": "la paga quien compra"
+  },
+  {
+    "contrato": "ChapaTuCriptoStable",
+    "operacion": "mintWithdrawal (retiro en CTC)",
+    "gas": 69268,
+    "nota": "el backend paga el gas; CTC solo existe al retirar"
+  },
+  {
+    "contrato": "ChapaTuCriptoStable",
+    "operacion": "payoutReserve (retiro en USDC)",
+    "gas": 88258,
+    "nota": "el backend paga el gas; no mintea, paga desde el excedente de reserva"
+  },
+  {
+    "contrato": "ChapaTuCripto (simple)",
+    "operacion": "deploy",
+    "gas": 999688,
+    "nota": "una sola vez"
+  },
+  {
+    "contrato": "ChapaTuCripto (simple)",
+    "operacion": "recordAndReward (1er mint)",
+    "gas": 98267,
+    "nota": ""
+  },
+  {
+    "contrato": "ChapaTuCripto (simple)",
+    "operacion": "recordAndReward (siguientes)",
+    "gas": 64067,
+    "nota": ""
+  },
+  {
+    "contrato": "ChapaTuCripto (simple)",
+    "operacion": "withdrawTo",
+    "gas": 56323,
+    "nota": ""
+  },
+  {
+    "contrato": "POL nativo",
+    "operacion": "transfer (pago directo en POL)",
+    "gas": 21000,
+    "nota": "referencia: 21 000 fijo"
+  }
+]

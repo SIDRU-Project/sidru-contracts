@@ -1,0 +1,18 @@
+{
+  "address": "0xA22F259c39AF6294B567782A33C589289e69Afc0",
+  "backend": "0x71f6122D5858a35D2393d1981f22022B9d6bd6cb",
+  "deployer": "0x71f6122D5858a35D2393d1981f22022B9d6bd6cb",
+  "reserveToken": "0x605E1A0e214B1b3e4CbB85f88d63cD1E8fe45140",
+  "reserveSymbol": "mUSD",
+  "reserveDecimals": 6,
+  "centsPerReserveUnit": "360",
+  "network": "amoy",
+  "chainId": 80002,
+  "txHash": "0x2d582033cf31c169875c2e1990f132d238526fec6f01fabbdac367749d4b4698",
+  "constructorArgs": [
+    "0x71f6122D5858a35D2393d1981f22022B9d6bd6cb",
+    "0x605E1A0e214B1b3e4CbB85f88d63cD1E8fe45140",
+    6,
+    "360"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "address": "0x1F8d9D88ED307cb30dF9Cad6c5b2c0378960569F",
+  "backend": "0xc94c19348009E011834f1bb50BA51A6D18EcF118",
+  "deployer": "0x151C00A785D37CA8Fa86c924D2c33eBA31f95c31",
+  "reserveToken": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+  "reserveSymbol": "USDC",
+  "reserveDecimals": 6,
+  "centsPerReserveUnit": "358",
+  "network": "polygon",
+  "chainId": 137,
+  "txHash": "0xf12be6c215c1e4c6de588b9df998b5e22fe6f415aa4618c80813e858c4aa7f9f",
+  "constructorArgs": [
+    "0xc94c19348009E011834f1bb50BA51A6D18EcF118",
+    "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+    6,
+    "358"
+  ]
+}

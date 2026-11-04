@@ -7,7 +7,7 @@ import { ChapaTuCripto } from "../typechain-types";
 
 /**
  * Tests de la Fase 3 para ChapaTuCripto (CTC).
- * Cubre los 10 casos de contract-spec.md §9. Corre en la red local de Hardhat.
+ * Cubre los casos de contract-spec.md §9. Corre en la red local de Hardhat.
  *
  * Convencion de signers (MVP: deployer == backend):
  *  - backend  : recibe DEFAULT_ADMIN_ROLE (deployer) y BACKEND_ROLE. Firma las operaciones privilegiadas.
